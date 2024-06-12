@@ -1,5 +1,6 @@
-import { Box, Button, SimpleGrid, Text } from "@chakra-ui/react";
+import { SimpleGrid, Spinner, Text } from "@chakra-ui/react";
 import React from "react";
+import InfiniteScroll from 'react-infinite-scroll-component';
 import { GameQuery } from "../App";
 import useGames from "../hooks/useGames";
 import GameCard from "./GameCard";
@@ -12,7 +13,7 @@ interface Props {
 
 const GameGrid = ({ gameQuery }: Props) => {
 
-    const { error, data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useGames(gameQuery);
+    const { error, data, isLoading, fetchNextPage, hasNextPage } = useGames(gameQuery);
 
     const skeletons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
@@ -20,9 +21,19 @@ const GameGrid = ({ gameQuery }: Props) => {
         return <Text>{error.message}</Text>;
     }
 
+    const fetchedGamesCount = data?.pages.reduce((total, page) => total + page.results.length, 0) ?? 0;
+
     return (
-        <Box padding={'10px'}>
-            <SimpleGrid columns={{ sm: 1, md: 2, lg: 3, xl: 4 }} spacing={6} >
+
+        <InfiniteScroll
+            dataLength={fetchedGamesCount}
+            next={() => fetchNextPage()}
+            hasMore={!!hasNextPage}
+            loader={<Spinner />}
+            endMessage={<Text padding={'10px'} marginY={5} fontSize='xl'>No more games!</Text>}
+        >
+
+            <SimpleGrid columns={{ sm: 1, md: 2, lg: 3, xl: 4 }} spacing={6} padding={'10px'} >
                 {isLoading && skeletons.map(skeleton =>
                     <GameCardContainer key={skeleton}>
                         <GameCardSceleton />
@@ -38,12 +49,9 @@ const GameGrid = ({ gameQuery }: Props) => {
                     </React.Fragment>
                 )}
             </SimpleGrid>
-            {hasNextPage &&
-                <Button marginY={5} disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
-                    {isFetchingNextPage ? 'Loading...' : 'Load More'}
-                </Button>
-            }
-        </Box>
+
+        </InfiniteScroll>
+
     );
 };
 
